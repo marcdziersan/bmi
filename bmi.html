@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <!-- Meta-Tags für Zeichenkodierung und responsive Darstellung -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Responsiver BMI Rechner mit Dark Mode</title>
+
+<!-- PWA Meta Tags -->
+<meta name="application-name" content="BMI Rechner">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BMI Rechner">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="msapplication-TileColor" content="#007bff">
+<meta name="msapplication-TileImage" content="./icons/icon-144x144.png">
+<meta name="theme-color" content="#007bff">
+
+<!-- Favicon und Apple Touch Icons -->
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/icon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="./icons/icon-16x16.png">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+
+<!-- Manifest -->
+<link rel="manifest" href="./manifest.webmanifest">
+  
+  <style>
+    /**
+     * CSS Variablen für einfachen Theme-Wechsel
+     * Default-Werte (Light Mode)
+     */
+    :root {
+      /* Hintergrund- und Textfarben */
+      --bg-color: #f5f5f5;
+      --text-color: #222;
+      --container-bg: white;
+      --container-shadow: rgba(0, 0, 0, 0.1);
+      
+      /* Eingabefeld-Stile */
+      --input-bg: white;
+      --input-border: #ccc;
+      --input-focus: rgba(0, 123, 255, 0.25);
+      
+      /* Button-Stile */
+      --button-bg: #007bff;
+      --button-hover: #0056b3;
+      
+      /* Ergebnis-Anzeige */
+      --result-color: black;
+      --error-color: red;
+      
+      /* Tabellen-Stile */
+      --table-border: #ddd;
+      --table-header-bg: rgba(0, 0, 0, 0.05);
+      
+      /* Toggle-Switch */
+      --toggle-bg: #ccc;
+      --toggle-active: #007bff;
+      
+      /* BMI-Kategorienfarben */
+      --underweight: #87CEEB;      /* Hellblau für Untergewicht */
+      --normal: #90EE90;           /* Hellgrün für Normalgewicht */
+      --overweight: #FFD700;       /* Gold für Übergewicht */
+      --obese: #FF7F7F;            /* Hellrot für Adipositas */
+    }
+
+    /**
+     * Dark Mode Variablen
+     * Werte überschreiben die Defaults
+     */
+    .dark-mode {
+      --bg-color: #121212;
+      --text-color: #eee;
+      --container-bg: #1e1e1e;
+      --container-shadow: rgba(255, 255, 255, 0.1);
+      
+      --input-bg: #333;
+      --input-border: #555;
+      
+      --button-bg: #3399ff;
+      --button-hover: #0077ff;
+      
+      --result-color: #eee;
+      --error-color: #ff6b6b;
+      
+      --table-border: #444;
+      --table-header-bg: rgba(255, 255, 255, 0.05);
+      
+      --toggle-bg: #555;
+      --toggle-active: #3399ff;
+      
+      /* Gedämpfte Farben für Dark Mode */
+      --underweight: #4a90e2;
+      --normal: #4caf50;
+      --overweight: #d4af37;
+      --obese: #d9534f;
+    }
+
+    /* Reset und Basis-Styles */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      /* Sanfte Übergänge für Theme-Wechsel */
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    }
+
+    /* Body-Stile */
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* Container für den BMI-Rechner */
+    .bmi-container {
+      background: var(--container-bg);
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px var(--container-shadow);
+      width: 90%;
+      max-width: 400px;
+      margin: 50px 0;
+      text-align: center;
+      position: relative;
+    }
+
+    /* Überschrift */
+    h2 {
+      margin-bottom: 20px;
+      color: var(--text-color);
+    }
+
+    /* Eingabefelder */
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 6px;
+      border: 1px solid var(--input-border);
+      font-size: 16px;
+      color: var(--text-color);
+      background-color: var(--input-bg);
+    }
+
+    /* Fokus-Stil für Eingabefelder */
+    input:focus {
+      outline: none;
+      border-color: var(--button-bg);
+      box-shadow: 0 0 0 2px var(--input-focus);
+    }
+
+    /* Berechnen-Button */
+    button {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 6px;
+      font-size: 16px;
+      background-color: var(--button-bg);
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      margin-top: 15px;
+    }
+
+    /* Button-Hover-Effekt */
+    button:hover {
+      background-color: var(--button-hover);
+    }
+
+    /* Ergebnis-Anzeige */
+    #result {
+      margin: 20px 0;
+      font-weight: bold;
+      color: var(--result-color);
+      min-height: 24px; /* Vermeidet Layout-Shift bei Ergebniseinblendung */
+    }
+
+    /* Fehlermeldung */
+    .error {
+      color: var(--error-color) !important;
+    }
+
+    /* BMI-Tabelle */
+    table {
+      margin-top: 25px;
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid var(--table-border);
+    }
+
+    /* Tabellenkopf und -zellen */
+    th, td {
+      padding: 12px;
+      text-align: center;
+      border: 1px solid var(--table-border);
+    }
+
+    /* Tabellenkopf-Hintergrund */
+    th {
+      background-color: var(--table-header-bg);
+    }
+
+    /* BMI-Kategorienfarben */
+    .underweight { background-color: var(--underweight); }
+    .normal      { background-color: var(--normal); }
+    .overweight  { background-color: var(--overweight); }
+    .obese       { background-color: var(--obese); }
+
+    /* Hervorhebung der aktuellen BMI-Kategorie */
+    .highlight {
+      font-weight: bold;
+      position: relative;
+    }
+
+    /* Rahmen für hervorgehobene Zeile */
+    .highlight::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      right: 2px;
+      bottom: 2px;
+      border: 2px solid var(--text-color);
+      border-radius: 2px;
+      pointer-events: none;
+    }
+
+    /* Dark Mode Toggle-Switch Container */
+    .toggle-container {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Toggle-Switch Element */
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 24px;
+    }
+
+    /* Verstecktes Checkbox-Input */
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    /* Schieberegler (Slider) */
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--toggle-bg);
+      transition: .3s;
+      border-radius: 24px;
+    }
+
+    /* Runder Knopf des Sliders */
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    /* Stil für aktivierten Toggle */
+    input:checked + .slider {
+      background-color: var(--toggle-active);
+    }
+
+    /* Position des Knopfs bei aktiviertem Toggle */
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+
+    /* Label für den Toggle-Switch */
+    .toggle-label {
+      font-size: 14px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    /* Responsive Anpassungen für mobile Geräte */
+    @media (max-width: 480px) {
+      .bmi-container {
+        padding: 20px;
+      }
+
+      input, button {
+        padding: 10px;
+        font-size: 14px;
+      }
+
+      th, td {
+        padding: 8px;
+        font-size: 13px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Hauptcontainer für den BMI-Rechner -->
+  <div class="bmi-container">
+    <!-- Dark Mode Toggle-Switch -->
+    <div class="toggle-container">
+      <label class="toggle-switch">
+        <input type="checkbox" id="darkModeToggle" />
+        <span class="slider"></span>
+      </label>
+      <span class="toggle-label">Dark Mode</span>
+    </div>
+
+    <!-- Überschrift -->
+    <h2>BMI Rechner</h2>
+    
+    <!-- Eingabefelder für Größe und Gewicht -->
+    <input type="number" id="height" placeholder="Größe in cm" min="50" max="250" />
+    <input type="number" id="weight" placeholder="Gewicht in kg" min="10" max="300" />
+    
+    <!-- Berechnen-Button -->
+    <button onclick="calculateBMI()">Berechnen</button>
+    
+    <!-- Ergebnis-Anzeige -->
+    <div id="result"></div>
+
+    <!-- BMI-Kategorien-Tabelle -->
+    <table>
+      <thead>
+        <tr>
+          <th>Kategorie</th>
+          <th>BMI-Bereich</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Zeile für Untergewicht -->
+        <tr id="row-underweight" class="underweight">
+          <td>Untergewicht</td>
+          <td>&lt; 18.5</td>
+        </tr>
+        
+        <!-- Zeile für Normalgewicht -->
+        <tr id="row-normal" class="normal">
+          <td>Normalgewicht</td>
+          <td>18.5 – 24.9</td>
+        </tr>
+        
+        <!-- Zeile für Übergewicht -->
+        <tr id="row-overweight" class="overweight">
+          <td>Übergewicht</td>
+          <td>25 – 29.9</td>
+        </tr>
+        
+        <!-- Zeile für Adipositas -->
+        <tr id="row-obese" class="obese">
+          <td>Adipositas</td>
+          <td>30+</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    /**
+     * Dark Mode Funktionalität
+     */
+    
+    // Elementreferenzen
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    
+    // Prüft, ob der Benutzer Systemeinstellungen für Dark Mode hat
+    const prefersDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    /**
+     * Initialisiert den Dark Mode basierend auf localStorage oder Systemeinstellungen
+     */
+    function initializeDarkMode() {
+      // Prüft localStorage für gespeicherte Einstellung
+      const darkModeSetting = localStorage.getItem('darkMode');
+      
+      // Wenn keine Einstellung in localStorage, Systemeinstellung verwenden
+      if (darkModeSetting === null) {
+        if (prefersDarkMode) enableDarkMode();
+      } 
+      // Ansonsten gespeicherte Einstellung anwenden
+      else if (darkModeSetting === 'enabled') {
+        enableDarkMode();
+      }
+    }
+    
+    /**
+     * Aktiviert den Dark Mode
+     */
+    function enableDarkMode() {
+      document.body.classList.add('dark-mode');
+      darkModeToggle.checked = true;
+      localStorage.setItem('darkMode', 'enabled');
+    }
+    
+    /**
+     * Deaktiviert den Dark Mode
+     */
+    function disableDarkMode() {
+      document.body.classList.remove('dark-mode');
+      darkModeToggle.checked = false;
+      localStorage.setItem('darkMode', 'disabled');
+    }
+    
+    // Event Listener für Toggle-Änderungen
+    darkModeToggle.addEventListener('change', () => {
+      if (darkModeToggle.checked) {
+        enableDarkMode();
+      } else {
+        disableDarkMode();
+      }
+    });
+    
+    // Initialisierung beim Laden der Seite
+    initializeDarkMode();
+
+    /**
+     * BMI-Berechnungsfunktionalität
+     */
+    
+    /**
+     * Entfernt Hervorhebungen von allen Tabellenzeilen
+     */
+    function clearHighlights() {
+      document.querySelectorAll('tr').forEach(row => {
+        row.classList.remove('highlight');
+      });
+    }
+    
+    /**
+     * Berechnet den BMI und zeigt das Ergebnis an
+     */
+    function calculateBMI() {
+      // Elementreferenzen
+      const heightInput = document.getElementById('height');
+      const weightInput = document.getElementById('weight');
+      const result = document.getElementById('result');
+      
+      // Werte aus den Eingabefeldern
+      const height = parseFloat(heightInput.value);
+      const weight = parseFloat(weightInput.value);
+      
+      // Vorbereitung: Hervorhebungen entfernen und Fehlerklasse zurücksetzen
+      clearHighlights();
+      result.classList.remove('error');
+      
+      /**
+       * Validierung der Eingaben
+       */
+      
+      // Prüft auf leere oder ungültige Werte
+      if (!height || !weight || height <= 0 || weight <= 0) {
+        showError("Bitte gültige Werte eingeben.");
+        return;
+      }
+      
+      // Prüft auf realistische Größenangabe
+      if (height < 50 || height > 250) {
+        showError("Bitte eine Größe zwischen 50cm und 250cm eingeben.");
+        return;
+      }
+      
+      // Prüft auf realistisches Gewicht
+      if (weight < 10 || weight > 300) {
+        showError("Bitte ein Gewicht zwischen 10kg und 300kg eingeben.");
+        return;
+      }
+      
+      /**
+       * BMI-Berechnung
+       */
+      const bmi = (weight / ((height / 100) ** 2)).toFixed(1);
+      
+      /**
+       * Bestimmung der BMI-Kategorie
+       */
+      let category, rowId;
+      
+      if (bmi < 18.5) {
+        category = "Untergewicht";
+        rowId = "row-underweight";
+      } else if (bmi < 25) {
+        category = "Normalgewicht";
+        rowId = "row-normal";
+      } else if (bmi < 30) {
+        category = "Übergewicht";
+        rowId = "row-overweight";
+      } else {
+        category = "Adipositas";
+        rowId = "row-obese";
+      }
+      
+      // Hervorhebung der aktuellen Kategorie
+      document.getElementById(rowId).classList.add('highlight');
+      
+      // Ergebnis anzeigen
+      result.textContent = `Dein BMI beträgt ${bmi} (${category})`;
+    }
+    
+    /**
+     * Zeigt eine Fehlermeldung an
+     * @param {string} message - Die Fehlermeldung
+     */
+    function showError(message) {
+      const result = document.getElementById('result');
+      result.textContent = message;
+      result.classList.add('error');
+    }
+    
+    /**
+     * Event Listener für Enter-Taste in Eingabefeldern
+     */
+    document.getElementById('height').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') calculateBMI();
+    });
+    
+    document.getElementById('weight').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') calculateBMI();
+    });
+  </script>
+  <script>
+    // Service Worker Registrierung
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(registration => {
+        console.log('ServiceWorker registration successful');
+      })
+      .catch(err => {
+        console.log('ServiceWorker registration failed: ', err);
+      });
+  });
+}
+
+// Install Prompt für PWA
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  // Prevent Chrome 67 and earlier from automatically showing the prompt
+  e.preventDefault();
+  // Stash the event so it can be triggered later
+  deferredPrompt = e;
+  
+  // Optional: Show install button
+  const installButton = document.createElement('button');
+  installButton.textContent = 'App installieren';
+  installButton.style.position = 'fixed';
+  installButton.style.bottom = '20px';
+  installButton.style.right = '20px';
+  installButton.style.zIndex = '9999';
+  installButton.style.padding = '10px 20px';
+  installButton.style.backgroundColor = '#007bff';
+  installButton.style.color = 'white';
+  installButton.style.border = 'none';
+  installButton.style.borderRadius = '5px';
+  installButton.style.cursor = 'pointer';
+  
+  installButton.addEventListener('click', () => {
+    // Show the install prompt
+    deferredPrompt.prompt();
+    // Wait for the user to respond to the prompt
+    deferredPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === 'accepted') {
+        console.log('User accepted the install prompt');
+      } else {
+        console.log('User dismissed the install prompt');
+      }
+      deferredPrompt = null;
+    });
+  });
+  
+  document.body.appendChild(installButton);
+});
+  </script>
+</body>
+</html>
