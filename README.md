@@ -42,7 +42,6 @@ Eine **progressive Web App** zur Berechnung des Body-Mass-Index (BMI) mit Dark-M
 
 ## 🤝 Mitwirkung
 Issues und PRs sind willkommen!  
-Bitte beachten Sie den [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## 📜 Lizenz
 MIT © 2023 Marc Dziersan  
